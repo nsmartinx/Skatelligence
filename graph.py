@@ -51,7 +51,7 @@ layout.addWidget(plot_widget)
 layout.addWidget(file_range_label)
 
 main_widget.setLayout(layout)
-main_widget.resize(1000, 1600)
+main_widget.resize(2600, 1400)
 main_widget.show()
 
 # Function to read and process files
