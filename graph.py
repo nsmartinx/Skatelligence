@@ -11,7 +11,8 @@ ACCEL_SCALE = 16  # +/- 16 g
 GYRO_SCALE = 2000  # +/- 2000 deg/second
 READINGS_PER_FILE = 100
 SENSOR_COUNT = 5
-DATA_DIR = "</Path/to/folder>"
+BASE_DIR = os.path.dirname(__file__)
+DATA_DIR = os.path.join(BASE_DIR, 'data')
 PLOT_WINDOW = 10  # Number of files to display in the plot
 
 # Function to clear the directory
