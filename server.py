@@ -3,7 +3,9 @@ import os
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "</Path/to/folder>"
+BASE_DIR = os.path.dirname(__file__)
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'data')
+
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
