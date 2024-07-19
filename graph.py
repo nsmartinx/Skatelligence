@@ -17,7 +17,7 @@ class MainApplication(QWidget):
     
         self.file_range_label = QLabel("Displaying files: None")
         self.highest_file_label = QLabel("Current highest file: None")
-        self.toggle_button = QPushButton("Toggle Raw/Processed Data", self)
+        self.toggle_button = QPushButton("Switch to Processed", self)
         self.toggle_button.clicked.connect(self.toggle_data_source)
         
         # Set the size of the toggle button
@@ -72,6 +72,7 @@ class MainApplication(QWidget):
             self.file_range_label.setText("Displaying files: None")
             self.highest_file_label.setText("Current highest file: None")
             self.slider.setMaximum(0)
+            read_and_process_file(None) # filter the data
             return
 
         slider_at_max = self.slider.value() == self.slider.maximum()

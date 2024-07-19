@@ -1,5 +1,4 @@
 import os
-import glob
 import numpy as np
 from scipy.signal import butter, filtfilt
 
@@ -11,7 +10,6 @@ SENSOR_COUNT = 5
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 PROCESSED_DIR = os.path.join(BASE_DIR, 'processed_data')
-PLOT_WINDOW = 10  # Number of files to display in the plot
 CUTOFF_FREQUENCY = 10  # New cutoff frequency for the low-pass filter in Hz
 FS = 50  # Sampling frequency in Hz
 FILTER_ORDER = 6  # Order of the Butterworth filter
@@ -47,16 +45,14 @@ def read_and_process_file(file_path):
 def save_filtered_data(filtered_data, output_path):
     filtered_data.tofile(output_path)
 
-def process_all_files(data_dir, output_dir):
-    file_paths = sorted(glob.glob(os.path.join(data_dir, '*.bin')), key=os.path.getmtime)
-    for file_path in file_paths:
+def process_single_file(file_number):
+    file_path = os.path.join(DATA_DIR, f"{file_number}.bin")
+    if os.path.exists(file_path):
         filtered_data = read_and_process_file(file_path)
         if filtered_data is not None:
-            base_name = os.path.basename(file_path)
-            output_path = os.path.join(output_dir, base_name)
+            output_path = os.path.join(PROCESSED_DIR, f"{file_number}.bin")
             save_filtered_data(filtered_data, output_path)
             print(f"Processed and saved: {output_path}")
-
-if __name__ == '__main__':
-    process_all_files(DATA_DIR, PROCESSED_DIR)
+    else:
+        print(f"File {file_path} does not exist.")
 
