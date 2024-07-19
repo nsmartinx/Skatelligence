@@ -11,3 +11,14 @@ else
     echo "Directory 'data' created."
 fi
 
+# Check if the directory 'processed_data' exists in the current directory
+if [ -d "processed_data" ]; then
+    # If the directory exists, clear its contents
+    rm -rf processed_data/*
+    echo "Directory 'processed_data' exists. Contents cleared."
+else
+    # If the directory does not exist, create it
+    mkdir processed_data
+    echo "Directory 'processed_data' created."
+fi
+
