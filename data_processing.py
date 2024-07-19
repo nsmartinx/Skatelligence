@@ -9,6 +9,7 @@ READINGS_PER_FILE = 100
 SENSOR_COUNT = 5
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, 'data')
+PROCESSED_DIR = os.path.join(BASE_DIR, 'processed_data')  # Added processed data directory
 PLOT_WINDOW = 10  # Number of files to display in the plot
 
 def read_and_process_file(file_path):
@@ -23,4 +24,5 @@ def read_and_process_file(file_path):
 
 def get_data_files(data_dir):
     return sorted(glob.glob(os.path.join(data_dir, '*.bin')), key=os.path.getmtime)
+
 
