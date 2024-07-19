@@ -28,6 +28,9 @@ void readMPU6050(int16_t* Ax, int16_t* Ay, int16_t* Az, int16_t* Gx, int16_t* Gy
 void dataLogger(void * parameter);
 void fileUploader(void * parameter);
 void wipeSDCard();
+void initializeWifi();
+void readData(void * parameter);
+void uploadData(void * parameter);
 
 void setup() {
     Serial.begin(115200); // Serial communication baud rate
@@ -35,9 +38,9 @@ void setup() {
     Wire.setClock(400000); // I2C Clock speed (400 kHz)
 
     // Initialize SD card
-    if (!SD.begin(CS)) {
+    while (!SD.begin(CS)) {
         Serial.println("Card Mount Failed");
-        return;
+        delay(500);
     }
 
     // Wipe the SD card
