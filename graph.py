@@ -1,7 +1,7 @@
 import numpy as np
 import pyqtgraph as pg
-from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
-from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QSlider
+from PyQt5.QtCore import QTimer, Qt
 import os
 import glob
 import shutil
@@ -48,8 +48,17 @@ for i in range(SENSOR_COUNT):
     accel_plot.setXRange(0, READINGS_PER_FILE * PLOT_WINDOW)
     gyro_plot.setXRange(0, READINGS_PER_FILE * PLOT_WINDOW)
 file_range_label = QLabel("Displaying files: None")
+highest_file_label = QLabel("Current highest file: None")
 layout.addWidget(plot_widget)
 layout.addWidget(file_range_label)
+layout.addWidget(highest_file_label)
+
+# Setup slider
+slider = QSlider(Qt.Horizontal)
+slider.setMinimum(0)
+slider.setMaximum(0)  # Will be updated dynamically based on the number of available files
+slider.setValue(0)
+layout.addWidget(slider)
 
 main_widget.setLayout(layout)
 main_widget.resize(2600, 1400)
@@ -70,18 +79,36 @@ def read_and_process_file(file_path):
 last_processed_files = []  # Keep track of the last processed files
 def update():
     global last_processed_files
-    files = sorted(glob.glob(os.path.join(DATA_DIR, '*.bin')), key=os.path.getmtime)[-PLOT_WINDOW:]
-    if not files:
+    files = sorted(glob.glob(os.path.join(DATA_DIR, '*.bin')), key=os.path.getmtime)
+    num_files = len(files)
+    if num_files == 0:
         file_range_label.setText("Displaying files: None")
+        highest_file_label.setText("Current highest file: None")
+        slider.setMaximum(0)
         return
-    
-    if files == last_processed_files:
-        return  # Skip processing if the files have not changed
-    last_processed_files = files
-    
-    all_data = [read_and_process_file(f) for f in files if os.path.getsize(f) > 0]
+
+    # Check if the slider is at its maximum value
+    slider_at_max = slider.value() == slider.maximum()
+
+    # Adjust the slider maximum value to reflect the number of available files
+    slider.setMaximum(max(0, num_files - PLOT_WINDOW))
+
+    # If the slider was at its maximum value, keep it at the new maximum value
+    if slider_at_max:
+        slider.setValue(slider.maximum())
+
+    # Determine the window of files to display based on the slider's current value
+    window_start_index = slider.value()
+    window_end_index = min(window_start_index + PLOT_WINDOW, num_files)
+    displayed_files = files[window_start_index:window_end_index]
+
+    # Update the last processed files to avoid reprocessing the same files
+    last_processed_files = displayed_files
+
+    # Read and process the selected files
+    all_data = [read_and_process_file(f) for f in displayed_files if os.path.getsize(f) > 0]
     all_data = [data for data in all_data if data is not None]
-    
+
     for i, curve_group in enumerate(curves):
         sensor_index = i // 6
         measure_index = i % 6
@@ -92,11 +119,14 @@ def update():
         else:
             print(f"No data for sensor {sensor_index}, measurement {measure_index}")
 
-    file_numbers = [os.path.splitext(os.path.basename(f))[0] for f in files]
+    file_numbers = [os.path.splitext(os.path.basename(f))[0] for f in displayed_files]
     if file_numbers:
         file_range_label.setText(f"Displaying files: {file_numbers[0]} to {file_numbers[-1]}")
     else:
         file_range_label.setText("Displaying files: None")
+
+    # Update the highest file label
+    highest_file_label.setText(f"Current highest file: {os.path.basename(files[-1]) if files else 'None'}")
 
 timer = QTimer()
 timer.timeout.connect(update)
