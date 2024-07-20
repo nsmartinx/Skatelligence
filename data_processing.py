@@ -2,6 +2,7 @@ import os
 import glob
 import numpy as np
 from filter_data import process_single_file
+from identify_jumps import process_files_and_detect_jumps  # Import the function
 
 # Constants
 ACCEL_SCALE = 16  # +/- 16 g
@@ -40,6 +41,10 @@ def read_and_process_file(file_path):
     for file_number in range(last_processed_file + 1, max_file_number + 1):
         process_single_file(file_number)
         last_processed_file = file_number
+
+        # Call identify_jumps on the processed file, except for the first file (file_number = 0)
+        if file_number != 0:
+            process_files_and_detect_jumps(file_number)
 
     if file_path:
         data = np.fromfile(file_path, dtype=np.int16)

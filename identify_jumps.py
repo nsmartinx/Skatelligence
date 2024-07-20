@@ -131,13 +131,3 @@ def process_files_and_detect_jumps(index):
             file_size = os.path.getsize(jump_file_path)
             print(f"Jump data saved to {jump_file_path}")
 
-def main():
-    files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))
-    files.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
-    print(f"Debug: Found {len(files)} files to process")
-    for i in range(1, len(files)):
-        process_files_and_detect_jumps(i)
-
-if __name__ == '__main__':
-    main()
-
