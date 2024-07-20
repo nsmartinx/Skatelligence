@@ -40,7 +40,10 @@ void setup() {
     // Initialize SD card
     while (!SD.begin(CS)) {
         Serial.println("Card Mount Failed");
-        delay(500);
+        SPI.end();
+        delay(100);
+        SPI.begin();
+        delay(100);
     }
 
     // Wipe the SD card
