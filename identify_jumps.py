@@ -37,13 +37,16 @@ def extract_x_accel(data):
     return x_accel_scaled
 
 # Function to detect potential jumps
-def detect_jumps(x_accel_data, start_time_offset, initial_state, initial_jump_start, initial_jump_start_time):
+def detect_jumps(x_accel_data, start_time_offset, initial_jump_start, initial_jump_start_time):
     jumps = []
-    state = initial_state
+    state = STATE_GROUNDED 
     jump_start = initial_jump_start
     jump_start_time = initial_jump_start_time
 
-    for i in range(1, len(x_accel_data)):
+    for i in range(len(x_accel_data)):
+        if i >= READINGS_PER_FILE and state == STATE_GROUNDED:
+            return jumps
+
         x_accel = x_accel_data[i]
         current_time = start_time_offset + i / SAMPLING_RATE  # Calculate the current time in seconds
 
@@ -79,31 +82,40 @@ def detect_jumps(x_accel_data, start_time_offset, initial_state, initial_jump_st
             if current_duration > MAX_JUMP_DURATION:
                 state = STATE_GROUNDED
 
-    return jumps, state, jump_start, jump_start_time
+    return jumps
 
 # Function to process all files and detect jumps
-def process_files_and_detect_jumps():
+def process_files_and_detect_jumps(index):
     files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))
     files.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
     all_jumps = []
     total_readings = 0
-    state = STATE_GROUNDED
     jump_start = None
     jump_start_time = None
 
-    for file in files:
-        data = read_accelerometer_data(file)
-        if data is not None:
-            x_accel_data = extract_x_accel(data)
-            jumps, state, jump_start, jump_start_time = detect_jumps(
-                x_accel_data, total_readings / SAMPLING_RATE, state, jump_start, jump_start_time
+    if 0 < index < len(files):
+        data_prev = read_accelerometer_data(files[index - 1])
+        data_curr = read_accelerometer_data(files[index])
+        if data_prev is not None and data_curr is not None:
+            x_accel_prev = extract_x_accel(data_prev)
+            x_accel_curr = extract_x_accel(data_curr)
+
+            jumps = detect_jumps(
+                np.concatenate([x_accel_prev, x_accel_curr]), (index - 1) * (READINGS_PER_FILE / SAMPLING_RATE), jump_start, jump_start_time
             )
             all_jumps.extend(jumps)
-            total_readings += len(x_accel_data)
+            total_readings += len(x_accel_curr)
 
     for jump_start_time, jump_end_time in all_jumps:
         print(f"Detected jump from {jump_start_time:.2f}s to {jump_end_time:.2f}s")
 
+def main():
+    files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))
+    files.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
+    print(f"Debug: Found {len(files)} files to process")
+    for i in range(1, len(files)):
+        process_files_and_detect_jumps(i)
+
 if __name__ == '__main__':
-    process_files_and_detect_jumps()
+    main()
 
