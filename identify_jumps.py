@@ -54,6 +54,9 @@ def detect_jumps(x_accel_data, start_time_offset, initial_state, initial_jump_st
                 jump_start_time = current_time
         
         elif state == STATE_TAKEOFF:
+            if x_accel > SPIKE_THRESHOLD:
+                jump_start_time = current_time
+
             if x_accel < ZERO_G_THRESHOLD:  # Transition to in-air when acceleration drops below 0.5g
                 state = STATE_IN_AIR
 
