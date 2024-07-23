@@ -3,25 +3,27 @@ import glob
 import numpy as np
 
 # Constants
-ACCEL_SCALE = 16  # +/- 16 g
+ACCEL_SCALE = 16  # +/- ACCEL_SCLAE are the min/max readings of the accelerometer
 READINGS_PER_FILE = 100
 SENSOR_COUNT = 5
 BASE_DIR = os.path.dirname(__file__)
 PROCESSED_DIR = os.path.join(BASE_DIR, 'processed_data')  # Directory containing processed data
 JUMPS_DIR = os.path.join(BASE_DIR, 'jumps')
 BUFFER_READINGS = 10
-SAMPLING_RATE = 100.0  # 100 Hz
+SAMPLING_RATE = 100.0  # Hz of IMU sampling
 MIN_JUMP_DURATION = 0.2  # Minimum duration of a jump in seconds
 MAX_JUMP_DURATION = 0.8  # Maximum duration of a jump in seconds
-ZERO_G_THRESHOLD = 0.5  # Threshold for near 0g during the jump
-SPIKE_THRESHOLD = 1.5  # Threshold for detecting spikes
+LOW_THRESHOLD = 0.5  # Acceleration must drop below this value while skater is airborn (in Gs)
+HIGH_THRESHOLD = 1.5  # Acceleration must be above this value on takeoff and landing (in Gs)
 
 # States for jump detection
 STATE_GROUNDED = 0
 STATE_TAKEOFF = 1
 STATE_IN_AIR = 2
 
-# Function to read data from a binary file
+'''
+Reads file_path as a binary file containing signed 16bit integers and returns a numpy array of those
+'''
 def read_accelerometer_data(file_path):
     try:
         data = np.fromfile(file_path, dtype=np.int16)
@@ -31,20 +33,28 @@ def read_accelerometer_data(file_path):
     except Exception as e:
         return None
 
-# Function to extract x-axis acceleration values from the data
+'''
+Takes a numpy array and returns an array containing the 0th, 30th, 60th... values, after being scaled. 
+This represents the AccelX readings from IMU0.
+'''
 def extract_x_accel(data):
     x_accel = data[0::30]  # Extract every 30th value starting from the 0th
-    x_accel_scaled = (x_accel / 32768.0) * ACCEL_SCALE  # Scale to +/- 16g
+    x_accel_scaled = (x_accel / 32768.0) * ACCEL_SCALE  # Scale the readings to the accelerometer range
     return x_accel_scaled
 
-# Function to detect potential jumps
+'''
+This function takes a numpy array of acceleromter data, and returns a list of tuples in the format
+(jump_start_time, jump_end_time), measured in seconds. start_time_offset is used to calculate this time.
+'''
 def detect_jumps(x_accel_data, start_time_offset):
-    jumps = []
-    state = STATE_GROUNDED 
+    jumps = [] # Will be a list of tuples of floats containing the start and end time for a jump
+    state = STATE_GROUNDED
     jump_start = 0.0
     jump_start_time = 0.0
 
     for i in range(len(x_accel_data)):
+        # If the first file has been analyzed and it is not currently in the middle of a jump, stop.
+        # This is because the second file will be analyzed in the next call to the function anyways
         if i >= READINGS_PER_FILE and state == STATE_GROUNDED:
             return jumps
 
@@ -52,16 +62,19 @@ def detect_jumps(x_accel_data, start_time_offset):
         current_time = start_time_offset + i / SAMPLING_RATE  # Calculate the current time in seconds
 
         if state == STATE_GROUNDED:
-            if x_accel > SPIKE_THRESHOLD:  # Detect takeoff spike
+            # If accel goes above threshold, register a takeoff
+            if x_accel > HIGH_THRESHOLD:
                 state = STATE_TAKEOFF
                 jump_start = i
                 jump_start_time = current_time
         
         elif state == STATE_TAKEOFF:
-            if x_accel > SPIKE_THRESHOLD:
+            # If still in the takeoff phase, we will reset the start time
+            if x_accel > HIGH_THRESHOLD:
                 jump_start_time = current_time
 
-            if x_accel < ZERO_G_THRESHOLD:  # Transition to in-air when acceleration drops below 0.5g
+            # If accel drops below low threshold, set to air state
+            if x_accel < LOW_THRESHOLD:
                 state = STATE_IN_AIR
 
             # Reset if the jump exceeds the maximum duration
@@ -72,10 +85,11 @@ def detect_jumps(x_accel_data, start_time_offset):
         elif state == STATE_IN_AIR:
             current_duration = current_time - jump_start_time  # Calculate the current duration of the jump
 
-            if x_accel > SPIKE_THRESHOLD:  # Detect landing spike
+            # If high acceleration spike after being in the air, they have landed
+            if x_accel > HIGH_THRESHOLD:
                 jump_end = i
                 jump_end_time = current_time
-                if MIN_JUMP_DURATION <= current_duration <= MAX_JUMP_DURATION:
+                if MIN_JUMP_DURATION <= current_duration <= MAX_JUMP_DURATION: # Ensure it within acceptable time range
                     jumps.append((jump_start_time, jump_end_time))
                 state = STATE_GROUNDED
 
@@ -85,19 +99,27 @@ def detect_jumps(x_accel_data, start_time_offset):
 
     return jumps
 
+'''
+Takes an integer for the index of file to analyze. This number must be between 1 and the highest data file
+It will analyze [index].bin and [index-1].bin
+'''
 def process_files_and_detect_jumps(index):
+    # Get all of the files in the filtered_data directory
     files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))
     files.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
-    all_jumps = []
+    all_jumps = [] # List of tuples, format is (jump_start_time, jump_end_time)
 
     if 0 < index < len(files):
+        # Get numpy array of data for index and index - 1 files
         data_prev = read_accelerometer_data(files[index - 1])
         data_curr = read_accelerometer_data(files[index])
         if data_prev is not None and data_curr is not None:
+            # Get the acceleration data
             x_accel_prev = extract_x_accel(data_prev)
             x_accel_curr = extract_x_accel(data_curr)
             start_time_offset = (index - 1) * READINGS_PER_FILE / SAMPLING_RATE
             
+            # Combine the two data arrays into one and find the jumps in it
             jumps = detect_jumps(
                 np.concatenate([x_accel_prev, x_accel_curr]),
                 start_time_offset,
@@ -109,9 +131,12 @@ def process_files_and_detect_jumps(index):
             jump_start_time, jump_end_time = jump
             print(f"Detected jump from {jump_start_time:.2f}s to {jump_end_time:.2f}s")
                 
+            # Calculate the start and end index in the files, this is the index relative to the concatenation of
+            # data_prev and data_curr.
             start_index = (int((jump_start_time - index + 1) * SAMPLING_RATE) - BUFFER_READINGS) * 30
             end_index = (int((jump_end_time - index + 1) * SAMPLING_RATE) + BUFFER_READINGS) * 30 + 30 
             
+            # Determine what number jump this is
             jump_files = glob.glob(os.path.join(JUMPS_DIR, 'jump_*.bin'))
             if jump_files:
                 # Extract numbers from file names and find the maximum
@@ -121,10 +146,9 @@ def process_files_and_detect_jumps(index):
             
             # Extract and save jump data
             jump_data = np.concatenate([data_prev, data_curr])[start_index:end_index]
-            jump_data = jump_data.astype(np.int16)  # Ensure data is converted to 16-bit integers
+            jump_data = jump_data.astype(np.int16)
             jump_file_path = os.path.join(JUMPS_DIR, f'jump_{jump_counter}.bin')
-            
-            jump_data.tofile(jump_file_path)  # Save as binary file in 16-bit format
+            jump_data.tofile(jump_file_path)
             
             file_size = os.path.getsize(jump_file_path)
             print(f"Jump data saved to {jump_file_path}")
