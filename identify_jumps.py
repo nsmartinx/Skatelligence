@@ -38,11 +38,11 @@ def extract_x_accel(data):
     return x_accel_scaled
 
 # Function to detect potential jumps
-def detect_jumps(x_accel_data, start_time_offset, initial_jump_start, initial_jump_start_time):
+def detect_jumps(x_accel_data, start_time_offset):
     jumps = []
     state = STATE_GROUNDED 
-    jump_start = initial_jump_start
-    jump_start_time = initial_jump_start_time
+    jump_start = 0.0
+    jump_start_time = 0.0
 
     for i in range(len(x_accel_data)):
         if i >= READINGS_PER_FILE and state == STATE_GROUNDED:
@@ -101,8 +101,6 @@ def process_files_and_detect_jumps(index):
             jumps = detect_jumps(
                 np.concatenate([x_accel_prev, x_accel_curr]),
                 start_time_offset,
-                None,  # initial_jump_start
-                None   # initial_jump_start_time
             )
             all_jumps.extend(jumps)
 
