@@ -13,15 +13,10 @@ clear_directory() {
 }
 
 # List of directories to always clear
-directories=("raw_data" "processed_data")
+directories=("raw_data" "processed_data" "jumps")
 
 # Clear the specified directories
 for dir in ${directories[@]}; do
     clear_directory $dir
 done
-
-# Check if 'j' argument is specified to clear 'jumps'
-if [[ "$1" == "j" ]]; then
-    clear_directory "jumps"
-fi
 
