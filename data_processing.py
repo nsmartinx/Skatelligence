@@ -11,10 +11,12 @@ READINGS_PER_FILE = 100
 SENSOR_COUNT = 5
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, 'data')
-PROCESSED_DIR = os.path.join(BASE_DIR, 'processed_data')  # Added processed data directory
+PROCESSED_DIR = os.path.join(BASE_DIR, 'processed_data')
 PLOT_WINDOW = 10  # Number of files to display in the plot
 
-# Function to get the last processed file number
+'''
+Returns the largest index of processed files
+'''
 def get_last_processed_file():
     processed_files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))
     if not processed_files:
@@ -24,6 +26,11 @@ def get_last_processed_file():
 
 last_processed_file = get_last_processed_file()  # Initialize last processed file number
 
+"""
+Returns an array of the scaled accel/gyro readings. This function will also call the appropriate functions
+to filter the data and find the jumps in the data. You can pass "None" into this function in order to just
+filter the data and find jumps without returning anything.
+"""
 def read_and_process_file(file_path):
     global last_processed_file
 
@@ -33,7 +40,7 @@ def read_and_process_file(file_path):
         print("No files found.")
         return
 
-    # Extract file numbers and find the highest one
+    # Find the highest file number that has been recorded
     file_numbers = [int(os.path.splitext(os.path.basename(f))[0]) for f in files]
     max_file_number = max(file_numbers)
 
@@ -42,10 +49,11 @@ def read_and_process_file(file_path):
         process_single_file(file_number)
         last_processed_file = file_number
 
-        # Call identify_jumps on the processed file, except for the first file (file_number = 0)
+        # Call identify_jumps on processed files. Do not call on file 0 as identify jumps requires one file before it
         if file_number != 0:
             process_files_and_detect_jumps(file_number)
 
+    # Scale the data and return that array
     if file_path:
         data = np.fromfile(file_path, dtype=np.int16)
         if data.size == 0:
@@ -56,14 +64,9 @@ def read_and_process_file(file_path):
         scaled_data = (data / 32768.0) * scale_vector
         return scaled_data
 
+'''
+Returns all files in the direcotory sorted by file name
+'''
 def get_data_files(data_dir):
     return sorted(glob.glob(os.path.join(data_dir, '*.bin')), key=os.path.getmtime)
-
-# The entry point for processing files
-if __name__ == '__main__':
-    # Directory containing the files
-    data_directory = DATA_DIR  # Use the constant defined above
-
-    # Process new files in the directory
-    read_and_process_file(None)
 
