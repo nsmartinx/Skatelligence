@@ -14,10 +14,14 @@ DATA_DIR = os.path.join(BASE_DIR, 'data')
 PROCESSED_DIR = os.path.join(BASE_DIR, 'processed_data')
 PLOT_WINDOW = 10  # Number of files to display in the plot
 
-'''
-Returns the largest index of processed files
-'''
 def get_last_processed_file():
+    """
+    Determines the highest file index that has been processed in the PROCESSED_DIR.
+
+    Returns:
+        int: The index of the last processed file, or -1 if no files have been processed.
+    """
+
     processed_files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))
     if not processed_files:
         return -1
@@ -26,12 +30,18 @@ def get_last_processed_file():
 
 last_processed_file = get_last_processed_file()  # Initialize last processed file number
 
-"""
-Returns an array of the scaled accel/gyro readings. This function will also call the appropriate functions
-to filter the data and find the jumps in the data. You can pass "None" into this function in order to just
-filter the data and find jumps without returning anything.
-"""
 def read_and_process_file(file_path):
+    """
+    Processes all unprocessed data files from DATA_DIR, applies filtering, and optionally returns scaled data
+    for a specific file. Also triggers jump detection.
+
+    Args:
+        file_path (str or None): Path to a specific file to return scaled data for, or None to just process files.
+
+    Returns:
+        numpy.array or None: Scaled data for the specified file, or None if no data is returned.
+    """
+
     global last_processed_file
 
     # Find all files in the directory matching the pattern XX.bin
@@ -64,9 +74,16 @@ def read_and_process_file(file_path):
         scaled_data = (data / 32768.0) * scale_vector
         return scaled_data
 
-'''
-Returns all files in the direcotory sorted by file name
-'''
 def get_data_files(data_dir):
+    """
+    Retrieves a list of all data files in the specified directory, sorted by modification time.
+
+    Args:
+        data_dir (str): The directory to search for data files.
+
+    Returns:
+        list: A list of file paths, sorted by the time they were last modified.
+    """
+
     return sorted(glob.glob(os.path.join(data_dir, '*.bin')), key=os.path.getmtime)
 
