@@ -13,7 +13,7 @@ clear_directory() {
 }
 
 # List of directories to always clear
-directories=("data" "processed_data")
+directories=("raw_data" "processed_data")
 
 # Clear the specified directories
 for dir in ${directories[@]}; do
