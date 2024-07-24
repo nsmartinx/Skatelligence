@@ -21,10 +21,17 @@ STATE_GROUNDED = 0
 STATE_TAKEOFF = 1
 STATE_IN_AIR = 2
 
-'''
-Reads file_path as a binary file containing signed 16bit integers and returns a numpy array of those
-'''
 def read_accelerometer_data(file_path):
+    """
+    Reads a binary file containing accelerometer data and returns it as a numpy array of signed 16-bit integers.
+
+    Args:
+        file_path (str): The path to the binary file.
+
+    Returns:
+        numpy.array or None: Array of accelerometer data or None if the file is empty or unreadable.
+    """
+
     try:
         data = np.fromfile(file_path, dtype=np.int16)
         if data.size == 0:
@@ -33,20 +40,33 @@ def read_accelerometer_data(file_path):
     except Exception as e:
         return None
 
-'''
-Takes a numpy array and returns an array containing the 0th, 30th, 60th... values, after being scaled. 
-This represents the AccelX readings from IMU0.
-'''
 def extract_x_accel(data):
+    """
+    Extracts and scales the x-axis acceleration data from a numpy array.
+
+    Args:
+        data (numpy.array): The raw accelerometer data array.
+
+    Returns:
+        numpy.array: The scaled x-axis acceleration values.
+    """
+
     x_accel = data[0::30]  # Extract every 30th value starting from the 0th
     x_accel_scaled = (x_accel / 32768.0) * ACCEL_SCALE  # Scale the readings to the accelerometer range
     return x_accel_scaled
 
-'''
-This function takes a numpy array of acceleromter data, and returns a list of tuples in the format
-(jump_start_time, jump_end_time), measured in seconds. start_time_offset is used to calculate this time.
-'''
 def detect_jumps(x_accel_data, start_time_offset):
+    """
+    Detects jumps based on x-axis acceleration data, using state machine logic to define jump phases.
+
+    Args:
+        x_accel_data (numpy.array): Array of scaled x-axis acceleration data.
+        start_time_offset (float): Time offset to calculate actual time of readings.
+
+    Returns:
+        list of tuple: List of tuples, each representing a detected jump as (jump_start_time, jump_end_time).
+    """
+
     jumps = [] # Will be a list of tuples of floats containing the start and end time for a jump
     state = STATE_GROUNDED
     jump_start = 0.0
@@ -99,11 +119,17 @@ def detect_jumps(x_accel_data, start_time_offset):
 
     return jumps
 
-'''
-Takes an integer for the index of file to analyze. This number must be between 1 and the highest data file
-It will analyze [index].bin and [index-1].bin
-'''
 def process_files_and_detect_jumps(index):
+    """
+    Processes two consecutive accelerometer data files to detect jumps and save detected jump data.
+
+    Args:
+        index (int): Index of the file to start processing from. This index is based on the naming convention of the files.
+
+    Returns:
+        None: Detected jumps are processed and saved to disk. Messages are printed to indicate detected jumps and save status.
+    """
+
     # Get all of the files in the filtered_data directory
     files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))
     files.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))

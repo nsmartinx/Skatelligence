@@ -5,10 +5,12 @@ from PyQt5.QtCore import QTimer, Qt
 import pyqtgraph as pg
 from data_processing import read_and_process_file, get_data_files, DATA_DIR, PROCESSED_DIR, PLOT_WINDOW, READINGS_PER_FILE, SENSOR_COUNT
 
-'''
-App that gets launched from main.py
-'''
 class MainApplication(QWidget):
+    """
+    Main application class for the PyQt GUI that plots sensor data. This class handles the GUI creation,
+    data plotting, and switching between raw and processed data directories.
+    """
+
     def __init__(self):
         super().__init__()
         
@@ -17,6 +19,10 @@ class MainApplication(QWidget):
         self.initUI()
 
     def initUI(self):
+        """
+        Initializes the user interface, including layout, plots, buttons, and other interactive elements.
+        """
+
         # Set layout and plots
         self.layout = QVBoxLayout(self)
         self.plot_widget, self.curves = self.setup_plots()
@@ -48,10 +54,13 @@ class MainApplication(QWidget):
         self.timer.timeout.connect(self.update)
         self.timer.start(100)  # Update interval (ms)
 
-    '''
-    Initializes the plots, does not actually plot anything
-    '''
     def setup_plots(self):
+        """
+        Initializes the plot widgets for the application, creating individual plots for acceleration and gyroscopic data.
+        Returns:
+            tuple: A tuple containing the plot widget and a list of curve objects for data plotting.
+        """
+
         plot_widget = pg.GraphicsLayoutWidget()
         plots = []
         curves = []
@@ -74,10 +83,11 @@ class MainApplication(QWidget):
         self.layout.addWidget(plot_widget)
         return plot_widget, curves
 
-    '''
-    Called whenever the push button is pressed, this function switches between the raw and processed data
-    '''
     def toggle_data_source(self):
+        """
+        Toggles the data source between raw and processed directories and updates the toggle button text accordingly.
+        """
+
         if self.data_directory == DATA_DIR:
             self.data_directory = PROCESSED_DIR
             self.toggle_button.setText("Switch to Raw")
@@ -86,10 +96,12 @@ class MainApplication(QWidget):
             self.toggle_button.setText("Switch to Processed")
         print(f"Data source switched to: {self.data_directory}")
 
-    '''
-    Update functioned called every 100ms
-    '''
     def update(self):
+        """
+        Periodically updates the data display, checking for new files and adjusting the UI components like sliders
+        and labels based on the available data.
+        """
+
         # Get_data_files is defined in data_processing.py and returns a sorted list of all files in that directory
         files = get_data_files(self.data_directory)
         num_files = len(get_data_files(DATA_DIR))
@@ -129,10 +141,13 @@ class MainApplication(QWidget):
 
         self.highest_file_label.setText(f"Current highest file: {os.path.basename(files[-1]) if files else 'None'}")
     
-    '''
-    Function to display the data on the plots
-    '''
     def update_plots(self, all_data):
+        """
+        Updates the plots with new data.
+        Args:
+            all_data (list): A list of datasets from multiple files to be plotted.
+        """
+
         for i, curve_group in enumerate(self.curves):
             sensor_index = i // 6
             measure_index = i % 6
