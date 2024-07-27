@@ -1,5 +1,6 @@
 from flask import Flask, request
 import os
+from data_processing import process_files
 
 app = Flask(__name__)
 
@@ -20,6 +21,7 @@ def upload_file():
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
     print(f"Received and saved file: {filename}")  # Print the name of the file
+    process_files()
     return f"File {filename} uploaded successfully", 200
 
 if __name__ == "__main__":

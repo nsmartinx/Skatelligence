@@ -3,7 +3,7 @@ import numpy as np
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider
 from PyQt5.QtCore import QTimer, Qt
 import pyqtgraph as pg
-from data_processing import read_and_process_file, get_data_files, DATA_DIR, PROCESSED_DIR, PLOT_WINDOW, READINGS_PER_FILE, SENSOR_COUNT
+from data_processing import read_file, get_data_files, DATA_DIR, PROCESSED_DIR, PLOT_WINDOW, READINGS_PER_FILE, SENSOR_COUNT
 
 class MainApplication(QWidget):
     """
@@ -106,11 +106,6 @@ class MainApplication(QWidget):
         files = get_data_files(self.data_directory)
         num_files = len(get_data_files(DATA_DIR))
       
-        # This will only be true if it is displaying the processed directory and some files havent been processed yet
-        # Calling this function will filter those unfiltered files 
-        if len(files) < num_files:
-            read_and_process_file(None)
-         
         # If the slider is currently at its max position, we will keep it there as new data is loaded. Store this for later
         slider_at_max = self.slider.value() == self.slider.maximum()
 
@@ -127,7 +122,7 @@ class MainApplication(QWidget):
         displayed_files = files[window_start_index:window_end_index]
 
         # Read in the data from all the files and filter out none values
-        all_data = [read_and_process_file(f) for f in displayed_files if os.path.getsize(f) > 0]
+        all_data = [read_file(f) for f in displayed_files if os.path.getsize(f) > 0]
         all_data = [data for data in all_data if data is not None]
         
         if all_data:
