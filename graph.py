@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider, QComboBox
 from PyQt5.QtCore import QTimer, Qt
 import pyqtgraph as pg
 from data_processing import read_file, get_data_files, BASE_DIR, DATA_NAME, PROCESSED_NAME, PLOT_WINDOW, READINGS_PER_FILE, SENSOR_COUNT
@@ -41,6 +41,13 @@ class MainApplication(QWidget):
         self.toggle_button.setFixedSize(300, 30)
         self.layout.addWidget(self.toggle_button)
         
+        self.data_path_dropdown = QComboBox(self)
+        self.data_path_dropdown.addItem("Default (data/live)", "data/live")
+        self.update_recording_options()
+        self.data_path_dropdown.currentIndexChanged.connect(self.change_data_path)
+        self.data_path_dropdown.setFixedWidth(300)
+        self.layout.addWidget(self.data_path_dropdown)
+
         # Initilize the slider, min/max values will be changed as filesa re loaded
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(0)
@@ -55,6 +62,32 @@ class MainApplication(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
         self.timer.start(100)  # Update interval (ms)
+
+    def update_recording_options(self):
+        """
+        Scans the specified recordings directory and updates the dropdown menu with available recording options.
+        It looks for directories that match the pattern 'recording_X' where X is a number, under the BASE_DIR/data/recordings path.
+        Each found directory is added as an option to the data path dropdown menu.
+        """
+
+        recordings_path = os.path.join(BASE_DIR, "data", "recordings")
+        if os.path.exists(recordings_path):
+            for entry in os.listdir(recordings_path):
+                if os.path.isdir(os.path.join(recordings_path, entry)) and entry.startswith("recording_"):
+                    self.data_path_dropdown.addItem(entry, os.path.join("data/recordings", entry))
+
+    def change_data_path(self):
+        """
+        Updates the data path based on the user's selection from the dropdown menu.
+        This method is triggered whenever the selected index in the dropdown changes.
+        It sets the new data path, updates the data directory accordingly, and then calls the update method to refresh the data display.
+        """
+
+        # Get the selected data path from dropdown
+        self.data_path = self.data_path_dropdown.currentData()
+        self.data_directory = os.path.join(BASE_DIR, self.data_path, self.data_name)
+        print(f"Data path changed to: {self.data_directory}")
+        self.update()  # Refresh the plot with the new data path
 
     def setup_plots(self):
         """

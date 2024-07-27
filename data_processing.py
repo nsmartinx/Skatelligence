@@ -10,8 +10,10 @@ GYRO_SCALE = 2000  # +/- 2000 deg/second
 READINGS_PER_FILE = 100
 SENSOR_COUNT = 5
 BASE_DIR = os.path.dirname(__file__)
-DATA_DIR = os.path.join(BASE_DIR, 'raw_data')
-PROCESSED_DIR = os.path.join(BASE_DIR, 'processed_data')
+DATA_NAME = 'raw_data'
+PROCESSED_NAME = 'processed_data'
+DATA_DIR = os.path.join(BASE_DIR, 'data/live', DATA_NAME)
+PROCESSED_DIR = os.path.join(BASE_DIR, 'data/live', PROCESSED_NAME)
 PLOT_WINDOW = 10  # Number of files to display in the plot
 
 def get_last_processed_file():
@@ -74,6 +76,7 @@ def process_files():
 
     # Process files from the last processed file to the highest file number
     for file_number in range(last_processed_file + 1, max_file_number + 1):
+        print(f'Processing file {file_number}')
         filter_file(file_number)
         last_processed_file = file_number
 
