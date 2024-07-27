@@ -2,7 +2,7 @@
 
 # Base directories
 mkdir -p data jumps raw_data processed_data
-mkdir -p data/labeled_data data/recordings
+mkdir -p data/labeled_data data/recordings data/live
 
 # Subdirectories within labeled_data
 cd data/labeled_data
