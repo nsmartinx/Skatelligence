@@ -9,8 +9,8 @@ SENSOR_COUNT = 5
 BASE_DIR = os.path.dirname(__file__)
 PROCESSED_DIR = os.path.join(BASE_DIR, 'data/live/processed_data')  # Directory containing processed data
 JUMPS_DIR = os.path.join(BASE_DIR, 'data/live/jumps')
-START_BUFFER = 10
-END_BUFFER = 10
+START_BUFFER = 50
+END_BUFFER = 30
 SAMPLING_RATE = 100.0  # Hz of IMU sampling
 MIN_JUMP_DURATION = 0.2  # Minimum duration of a jump in seconds
 MAX_JUMP_DURATION = 0.8  # Maximum duration of a jump in seconds
@@ -81,7 +81,6 @@ def detect_jumps(x_accel_data, start_time_offset):
 
         x_accel = x_accel_data[i]
         current_time = start_time_offset + i / SAMPLING_RATE  # Calculate the current time in seconds
-
         if state == STATE_GROUNDED:
             # If accel goes above threshold, register a takeoff
             if x_accel > HIGH_THRESHOLD:
@@ -125,27 +124,32 @@ def process_files_and_detect_jumps(index):
     Processes two consecutive accelerometer data files to detect jumps and save detected jump data.
 
     Args:
-        index (int): Index of the file to start processing from. This index is based on the naming convention of the files.
+        index (int): Index of the most recent file. Files index-1 and index-2 will be analyzed for jumps. 
+        Files index-3 and index will be used when saving a jump. This index is based on the naming convention of the files.
 
     Returns:
         None: Detected jumps are processed and saved to disk. Messages are printed to indicate detected jumps and save status.
     """
     
-    print(f'Processing file {index} and {index-1} for jumps')
+    print(f'Processing file {index-1} and {index-2} for jumps')
     # Get all of the files in the filtered_data directory
     files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))
     files.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
     all_jumps = [] # List of tuples, format is (jump_start_time, jump_end_time)
 
-    if 0 < index < len(files):
-        # Get numpy array of data for index and index - 1 files
-        data_prev = read_accelerometer_data(files[index - 1])
-        data_curr = read_accelerometer_data(files[index])
+    if 2 < index < len(files):
+        # Get numpy array of data for index - 1 and index - 2 files
+        data_prev = read_accelerometer_data(files[index - 2])
+        data_curr = read_accelerometer_data(files[index - 1])
+
+        data_pre = read_accelerometer_data(files[index - 3])
+        data_post = read_accelerometer_data(files[index])
+
         if data_prev is not None and data_curr is not None:
             # Get the acceleration data
             x_accel_prev = extract_x_accel(data_prev)
             x_accel_curr = extract_x_accel(data_curr)
-            start_time_offset = (index - 1) * READINGS_PER_FILE / SAMPLING_RATE
+            start_time_offset = (index - 2) * READINGS_PER_FILE / SAMPLING_RATE
             
             # Combine the two data arrays into one and find the jumps in it
             jumps = detect_jumps(
@@ -161,9 +165,10 @@ def process_files_and_detect_jumps(index):
                 
             # Calculate the start and end index in the files, this is the index relative to the concatenation of
             # data_prev and data_curr.
-            start_index = (int((jump_start_time - index + 1) * SAMPLING_RATE) - START_BUFFER) * 30
-            end_index = (int((jump_end_time - index + 1) * SAMPLING_RATE) + END_BUFFER) * 30 + 30 
-            
+            start_index = (int((jump_start_time - index + 2) * READINGS_PER_FILE) - START_BUFFER) * 30 + (READINGS_PER_FILE * 30)
+            end_index = (int((jump_end_time - index + 2) * READINGS_PER_FILE) + END_BUFFER) * 30 + 30 + (READINGS_PER_FILE * 30)
+            print(f'start_index: {start_index}. end_index: {end_index}')
+                        
             # Determine what number jump this is
             jump_files = glob.glob(os.path.join(JUMPS_DIR, 'jump_*.bin'))
             if jump_files:
@@ -173,7 +178,7 @@ def process_files_and_detect_jumps(index):
                 jump_counter = 0  # Start from 0 if no files are found
             
             # Extract and save jump data
-            jump_data = np.concatenate([data_prev, data_curr])[start_index:end_index]
+            jump_data = np.concatenate([data_pre, data_prev, data_curr, data_post])[start_index:end_index]
             jump_data = jump_data.astype(np.int16)
             jump_file_path = os.path.join(JUMPS_DIR, f'jump_{jump_counter}.bin')
             jump_data.tofile(jump_file_path)

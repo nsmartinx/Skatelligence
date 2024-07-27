@@ -80,8 +80,8 @@ def process_files():
         filter_file(file_number)
         last_processed_file = file_number
 
-        # Call identify_jumps on processed files. Do not call on file 0 as identify jumps requires one file before it
-        if file_number != 0:
+        # Call identify_jumps on processed files. Do not call on file 0-2 as identify jumps requires three files before it
+        if file_number > 2:
             process_files_and_detect_jumps(file_number)
 
 def get_data_files(data_dir):
