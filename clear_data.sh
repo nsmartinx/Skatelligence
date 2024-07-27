@@ -12,6 +12,8 @@ clear_directory() {
     fi
 }
 
+cd data/live
+
 # List of directories to always clear
 directories=("raw_data" "processed_data" "jumps")
 

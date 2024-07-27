@@ -5,10 +5,7 @@ from data_processing import process_files
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(__file__)
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'raw_data')
-
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'data/live/raw_data')
 
 @app.route('/postdata', methods=['POST'])
 def upload_file():
