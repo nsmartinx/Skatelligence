@@ -7,8 +7,8 @@ ACCEL_SCALE = 16  # +/- ACCEL_SCLAE are the min/max readings of the acceleromete
 READINGS_PER_FILE = 100
 SENSOR_COUNT = 5
 BASE_DIR = os.path.dirname(__file__)
-PROCESSED_DIR = os.path.join(BASE_DIR, 'processed_data')  # Directory containing processed data
-JUMPS_DIR = os.path.join(BASE_DIR, 'jumps')
+PROCESSED_DIR = os.path.join(BASE_DIR, 'data/live/processed_data')  # Directory containing processed data
+JUMPS_DIR = os.path.join(BASE_DIR, 'data/live/jumps')
 BUFFER_READINGS = 10
 SAMPLING_RATE = 100.0  # Hz of IMU sampling
 MIN_JUMP_DURATION = 0.2  # Minimum duration of a jump in seconds
@@ -129,7 +129,8 @@ def process_files_and_detect_jumps(index):
     Returns:
         None: Detected jumps are processed and saved to disk. Messages are printed to indicate detected jumps and save status.
     """
-
+    
+    print(f'Processing file {index} and {index-1} for jumps')
     # Get all of the files in the filtered_data directory
     files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))
     files.sort(key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))

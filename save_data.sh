@@ -23,9 +23,9 @@ new_dir="$base_dir/recording_$number"
 mkdir "$new_dir"
 
 # Copy directories into the new directory
-cp -r jumps "$new_dir/jumps"
-cp -r raw_data "$new_dir/raw_data"
-cp -r processed_data "$new_dir/processed_data"
+cp -r data/live/jumps "$new_dir/jumps"
+cp -r data/live/raw_data "$new_dir/raw_data"
+cp -r data/live/processed_data "$new_dir/processed_data"
 
 echo "Created and set up directory $new_dir"
 

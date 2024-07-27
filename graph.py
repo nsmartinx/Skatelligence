@@ -3,7 +3,7 @@ import numpy as np
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider
 from PyQt5.QtCore import QTimer, Qt
 import pyqtgraph as pg
-from data_processing import read_file, get_data_files, DATA_DIR, PROCESSED_DIR, PLOT_WINDOW, READINGS_PER_FILE, SENSOR_COUNT
+from data_processing import read_file, get_data_files, BASE_DIR, DATA_NAME, PROCESSED_NAME, PLOT_WINDOW, READINGS_PER_FILE, SENSOR_COUNT
 
 class MainApplication(QWidget):
     """
@@ -15,7 +15,9 @@ class MainApplication(QWidget):
         super().__init__()
         
         # The graph can switch between raw data and processed data, self.data_directory is the file path to this. Initialize to raw data
-        self.data_directory = DATA_DIR
+        self.data_path = 'data/live'
+        self.data_name = DATA_NAME
+        self.data_directory = os.path.join(BASE_DIR, self.data_path, self.data_name)
         self.initUI()
 
     def initUI(self):
@@ -88,12 +90,14 @@ class MainApplication(QWidget):
         Toggles the data source between raw and processed directories and updates the toggle button text accordingly.
         """
 
-        if self.data_directory == DATA_DIR:
-            self.data_directory = PROCESSED_DIR
+        if self.data_name == DATA_NAME:
+            self.data_name = PROCESSED_NAME
             self.toggle_button.setText("Switch to Raw")
         else:
-            self.data_directory = DATA_DIR
+            self.data_name = DATA_NAME
             self.toggle_button.setText("Switch to Processed")
+
+        self.data_directory = os.path.join(BASE_DIR, self.data_path, self.data_name)
         print(f"Data source switched to: {self.data_directory}")
 
     def update(self):
@@ -104,7 +108,7 @@ class MainApplication(QWidget):
 
         # Get_data_files is defined in data_processing.py and returns a sorted list of all files in that directory
         files = get_data_files(self.data_directory)
-        num_files = len(get_data_files(DATA_DIR))
+        num_files = len(files)
       
         # If the slider is currently at its max position, we will keep it there as new data is loaded. Store this for later
         slider_at_max = self.slider.value() == self.slider.maximum()
