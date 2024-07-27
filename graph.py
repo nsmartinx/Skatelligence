@@ -18,6 +18,7 @@ class MainApplication(QWidget):
         self.data_path = 'data/live'
         self.data_name = DATA_NAME
         self.data_directory = os.path.join(BASE_DIR, self.data_path, self.data_name)
+        self.jump_view_mode = False
         self.initUI()
 
     def initUI(self):
@@ -48,6 +49,15 @@ class MainApplication(QWidget):
         self.data_path_dropdown.setFixedWidth(300)
         self.layout.addWidget(self.data_path_dropdown)
 
+        self.jump_dropdown = QComboBox(self)
+        self.jump_dropdown.setFixedWidth(300)
+        self.layout.addWidget(self.jump_dropdown)
+
+        self.jump_toggle_button = QPushButton("View Selected Jump", self)
+        self.jump_toggle_button.clicked.connect(self.toggle_jump_view)
+        self.jump_toggle_button.setFixedSize(300, 30)
+        self.layout.addWidget(self.jump_toggle_button)
+
         # Initilize the slider, min/max values will be changed as filesa re loaded
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(0)
@@ -62,6 +72,61 @@ class MainApplication(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
         self.timer.start(100)  # Update interval (ms)
+
+    def update_jump_options(self):
+        """
+        Updates the jump options dropdown by listing available jumps within the current data path's 'jumps' directory.
+        This method now checks if there are new jumps before updating the dropdown, to avoid unnecessary updates.
+        """
+        # Construct the full path to the jumps directory
+        jumps_path = os.path.join(BASE_DIR, self.data_path, "jumps")
+
+        # Early exit if the jumps directory does not exist
+        if not os.path.exists(jumps_path):
+            self.jump_dropdown.clear()
+            return
+
+        # Collect current jumps in the directory
+        current_jumps = sorted(jump for jump in os.listdir(jumps_path)
+                               if os.path.isfile(os.path.join(jumps_path, jump)) and jump.startswith("jump_"))
+
+        # Check if the list of jumps has changed since last update
+        if hasattr(self, 'last_jump_list') and self.last_jump_list == current_jumps:
+            return  # No change detected, no need to update the dropdown
+
+        # Update the dropdown with the new list of jumps
+        self.jump_dropdown.clear()
+        for jump in current_jumps:
+            self.jump_dropdown.addItem(jump, os.path.join(jumps_path, jump))
+
+        # Remember the current list of jumps for future comparisons
+        self.last_jump_list = current_jumps    
+
+    def toggle_jump_view(self):
+        """
+        Toggles the view mode between normal data and a specific jump. When a jump is selected, the application
+        focuses on displaying only that jump's data.
+        """
+
+        if self.jump_view_mode:
+            self.jump_view_mode = False
+            self.jump_toggle_button.setText("View Selected Jump")
+            self.update()  # Return to normal update mode
+        else:
+            self.jump_view_mode = True
+            self.jump_toggle_button.setText("Return to Full View")
+            self.display_selected_jump()
+
+    def display_selected_jump(self):
+        """
+        Displays the data for the selected jump.
+        """
+
+        jump_file = self.jump_dropdown.currentData()
+        if jump_file and os.path.exists(jump_file):
+            jump_data = read_file(jump_file)
+            if jump_data is not None:
+                self.update_plots([jump_data])
 
     def update_recording_options(self):
         """
@@ -87,6 +152,7 @@ class MainApplication(QWidget):
         self.data_path = self.data_path_dropdown.currentData()
         self.data_directory = os.path.join(BASE_DIR, self.data_path, self.data_name)
         print(f"Data path changed to: {self.data_directory}")
+        self.update_jump_options()
         self.update()  # Refresh the plot with the new data path
 
     def setup_plots(self):
@@ -110,10 +176,6 @@ class MainApplication(QWidget):
             # Each plot will ahve three lines on it (for each of x, y, z data)
             curves.extend([accel_plot.plot(pen='r'), accel_plot.plot(pen='g'), accel_plot.plot(pen='b'),
                            gyro_plot.plot(pen='r'), gyro_plot.plot(pen='g'), gyro_plot.plot(pen='b')])
-
-            # Number of readings displayed at a time
-            accel_plot.setXRange(0, READINGS_PER_FILE * PLOT_WINDOW)
-            gyro_plot.setXRange(0, READINGS_PER_FILE * PLOT_WINDOW)
 
         self.layout.addWidget(plot_widget)
         return plot_widget, curves
@@ -161,8 +223,11 @@ class MainApplication(QWidget):
         # Read in the data from all the files and filter out none values
         all_data = [read_file(f) for f in displayed_files if os.path.getsize(f) > 0]
         all_data = [data for data in all_data if data is not None]
-        
-        if all_data:
+       
+        self.update_jump_options() 
+        if self.jump_view_mode:
+            self.display_selected_jump()
+        elif all_data:
             self.update_plots(all_data)
         
         #file_numbers = [os.path.splitext(os.path.basename(f))[0] for f in displayed_files]
