@@ -5,7 +5,8 @@ TODO (include images and schematics)
 ## Instructions
 TODO
 ## Website
-TODO
+The skatelligence website is: `https://ayihuang.github.io/`
+The repo for the website can be found at `https://github.com/ayihuang/ayihuang.github.io/`
 ## Paper
 TODO
 ## Authors
