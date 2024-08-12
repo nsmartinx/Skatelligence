@@ -97,3 +97,6 @@ def get_data_files(data_dir):
 
     return sorted(glob.glob(os.path.join(data_dir, '*.bin')), key=os.path.getmtime)
 
+if __name__ == '__main__':
+    process_files()
+
