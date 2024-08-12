@@ -58,13 +58,51 @@ void setup() {
     // Start Wi-Fi connection
     initializeWifi();
 
+    for (int i = 0; i < 5; i++) {
+        int16_t Ax, Ay, Az, Gx, Gy, Gz;
+        tcaSelect(i);
+        readMPU6050(&Ax, &Ay, &Az, &Gx, &Gy, &Gz);
+        Serial.print("Sensor: ");
+        Serial.print(i);
+        Serial.print(" ");
+        Serial.print(Ax);
+        Serial.print(Ay);
+        Serial.print(Az);
+        Serial.print(Gx);
+        Serial.print(Gy);
+        Serial.println(Gz);
+    }
+    
+
     // Create tasks
     xTaskCreatePinnedToCore(readData, "Read Data", 10000, NULL, 1, NULL, 0); // Core 0
     xTaskCreatePinnedToCore(uploadData, "Upload Data", 10000, NULL, 1, NULL, 1); // Core 1
 }
 
+void ScanWifi(){
+    Serial.println("Scanning for WiFi networks...");
+    int n = WiFi.scanNetworks();
+    if (n == 0) {
+        Serial.println("No networks found.");
+    } else {
+        Serial.print(n);
+        Serial.println(" networks found:");
+    for (int i = 0; i < n; ++i) {
+      // Print SSID and RSSI for each network found
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      Serial.print(" (");
+      Serial.print(WiFi.RSSI(i));
+      Serial.println(" dBm)");
+      delay(10);
+    }
+  }
+}
+
 void initializeWifi(){
     Serial.println("\nConnecting to WiFi...");
+    ScanWifi();
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
