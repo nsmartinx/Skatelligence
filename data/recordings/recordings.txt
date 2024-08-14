@@ -1,0 +1,14 @@
+R0: Sal - Bad
+R1: Toe
+R2: Flip
+R3: Sal
+R4: Lutz - 1st wasnt great
+R5: Loop
+R6: Axel
+R7: Sal
+R8: Toe
+R9: Loop
+R10: Flip
+R11: Lutz
+R12: Axel
+R13: 1 of each double in order except axel
