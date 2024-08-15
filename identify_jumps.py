@@ -70,10 +70,10 @@ def extract_x_gyro(data):
     """
 
     x_gyro = data[3::30]  # Extract every 30th value starting from the 0th
-    x_gyro_scaled = (x_accel / 32768.0) * GYRO_SCALE  # Scale the readings to the accelerometer range
+    x_gyro_scaled = (x_gyro / 32768.0) * GYRO_SCALE  # Scale the readings to the accelerometer range
     return x_gyro_scaled
 
-def compute_total_rotation(x_gyro_data, sampling_rate):
+def compute_total_rotation(x_gyro_data):
     """
     Computes the total rotation of a jump by numerically integrating the x-axis gyroscope data.
 
@@ -84,7 +84,7 @@ def compute_total_rotation(x_gyro_data, sampling_rate):
         float: Total rotation on x axis 
 
     """
-    time_interval = 1 / sampling_rate
+    time_interval = 1 / SAMPLING_RATE
     total_rotation = np.sum(x_gyro_data) * time_interval
     return total_rotation
 
@@ -217,7 +217,7 @@ def process_files_and_detect_jumps(index, processed_dir):
             jump_data = jump_data.astype(np.int16)
             
             # Check if the jump has the minimum rotation to be considered a jump
-            if abs(compute_total_rotation(extract_x_gyro(jump_data)) > MINIMUM_ROTATION:
+            if abs(compute_total_rotation(extract_x_gyro(jump_data))) > MINIMUM_ROTATION:
                 jump_file_path = os.path.join(JUMPS_DIR, f'jump_{jump_counter}.bin')
                 jump_data.tofile(jump_file_path)
             
