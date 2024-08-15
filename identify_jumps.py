@@ -119,7 +119,7 @@ def detect_jumps(x_accel_data, start_time_offset):
 
     return jumps
 
-def process_files_and_detect_jumps(index):
+def process_files_and_detect_jumps(index, processed_dir):
     """
     Processes two consecutive accelerometer data files to detect jumps and save detected jump data.
 
@@ -131,6 +131,9 @@ def process_files_and_detect_jumps(index):
         None: Detected jumps are processed and saved to disk. Messages are printed to indicate detected jumps and save status.
     """
     
+    PROCESSED_DIR = processed_dir
+    JUMPS_DIR = os.path.join(os.path.dirname(PROCESSED_DIR), 'jumps')	
+
     print(f'Processing file {index-1} and {index-2} for jumps')
     # Get all of the files in the filtered_data directory
     files = glob.glob(os.path.join(PROCESSED_DIR, '*.bin'))

@@ -57,7 +57,7 @@ def read_and_process_file(file_path):
     int_data = (filtered_data * (32768.0 / scale_vector)).astype(np.int16)
     return int_data
 
-def filter_file(file_number):
+def filter_file(file_number, data_dir, processed_dir):
     """
     Process a single data file from its number, apply filters, and save the processed data.
 
@@ -67,6 +67,9 @@ def filter_file(file_number):
     Returns:
         None: Outputs are saved to disk and messages are printed about the status.
     """
+
+    DATA_DIR = data_dir
+    PROCESSED_DIR = processed_dir
 
     file_path = os.path.join(DATA_DIR, f"{file_number}.bin")
     if os.path.exists(file_path):
