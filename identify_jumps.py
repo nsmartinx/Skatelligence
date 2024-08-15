@@ -3,7 +3,8 @@ import glob
 import numpy as np
 
 # Constants
-ACCEL_SCALE = 16  # +/- ACCEL_SCLAE are the min/max readings of the accelerometer
+ACCEL_SCALE = 16  # +/- ACCEL_SCLAE are the min/max readings of the accelerometer (
+GYRO_SCALE = 2000 # +/- GYRO_SCALE are the min/max readings of the gyroscope (deg/sec)
 READINGS_PER_FILE = 100
 SENSOR_COUNT = 5
 BASE_DIR = os.path.dirname(__file__)
@@ -16,6 +17,7 @@ MIN_JUMP_DURATION = 0.2  # Minimum duration of a jump in seconds
 MAX_JUMP_DURATION = 0.8  # Maximum duration of a jump in seconds
 LOW_THRESHOLD = 0.5  # Acceleration must drop below this value while skater is airborn (in Gs)
 HIGH_THRESHOLD = 1.5  # Acceleration must be above this value on takeoff and landing (in Gs)
+MINIMUM_ROTATION = 180 # Minimum number of degress that must be rotated for it to be considered a jump
 
 # States for jump detection
 STATE_GROUNDED = 0
@@ -55,6 +57,36 @@ def extract_x_accel(data):
     x_accel = data[0::30]  # Extract every 30th value starting from the 0th
     x_accel_scaled = (x_accel / 32768.0) * ACCEL_SCALE  # Scale the readings to the accelerometer range
     return x_accel_scaled
+
+def extract_x_gyro(data):
+    """
+    Extracts and scales the x-axis gyro data from a numpy array.
+
+    Args:
+        data (numpy.array): The raw gyroscope data array.
+
+    Returns:
+        numpy.array: The scaled x-axis gyro values.
+    """
+
+    x_gyro = data[3::30]  # Extract every 30th value starting from the 0th
+    x_gyro_scaled = (x_accel / 32768.0) * GYRO_SCALE  # Scale the readings to the accelerometer range
+    return x_gyro_scaled
+
+def compute_total_rotation(x_gyro_data, sampling_rate):
+    """
+    Computes the total rotation of a jump by numerically integrating the x-axis gyroscope data.
+
+    Args:
+        x_gro_data (numpy.array): The scaled x-axis gyroscope data array
+
+    Returns:
+        float: Total rotation on x axis 
+
+    """
+    time_interval = 1 / sampling_rate
+    total_rotation = np.sum(x_gyro_data) * time_interval
+    return total_rotation
 
 def detect_jumps(x_accel_data, start_time_offset):
     """
@@ -183,9 +215,12 @@ def process_files_and_detect_jumps(index, processed_dir):
             # Extract and save jump data
             jump_data = np.concatenate([data_pre, data_prev, data_curr, data_post])[start_index:end_index]
             jump_data = jump_data.astype(np.int16)
-            jump_file_path = os.path.join(JUMPS_DIR, f'jump_{jump_counter}.bin')
-            jump_data.tofile(jump_file_path)
             
-            file_size = os.path.getsize(jump_file_path)
-            print(f"Jump data saved to {jump_file_path}")
+            # Check if the jump has the minimum rotation to be considered a jump
+            if abs(compute_total_rotation(extract_x_gyro(jump_data)) > MINIMUM_ROTATION:
+                jump_file_path = os.path.join(JUMPS_DIR, f'jump_{jump_counter}.bin')
+                jump_data.tofile(jump_file_path)
+            
+                file_size = os.path.getsize(jump_file_path)
+                print(f"Jump data saved to {jump_file_path}")
 
