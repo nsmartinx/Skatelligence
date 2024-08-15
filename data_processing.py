@@ -1,4 +1,5 @@
 import os
+import sys
 import glob
 import numpy as np
 from filter_data import filter_file
@@ -77,12 +78,12 @@ def process_files():
     # Process files from the last processed file to the highest file number
     for file_number in range(last_processed_file + 1, max_file_number + 1):
         print(f'Processing file {file_number}')
-        filter_file(file_number)
+        filter_file(file_number, DATA_DIR, PROCESSED_DIR)
         last_processed_file = file_number
 
         # Call identify_jumps on processed files. Do not call on file 0-2 as identify jumps requires three files before it
         if file_number > 2:
-            process_files_and_detect_jumps(file_number)
+            process_files_and_detect_jumps(file_number, PROCESSED_DIR)
 
 def get_data_files(data_dir):
     """
@@ -98,5 +99,13 @@ def get_data_files(data_dir):
     return sorted(glob.glob(os.path.join(data_dir, '*.bin')), key=os.path.getmtime)
 
 if __name__ == '__main__':
-    process_files()
+    if len(sys.argv) > 1 and sys.argv[1] == 'all':
+        recordings = glob.glob(os.path.join(BASE_DIR, 'data/recordings', 'recording_*'))
+        for recording in recordings:
+            DATA_DIR = os.path.join(recording, DATA_NAME)
+            PROCESSED_DIR = os.path.join(recording, PROCESSED_NAME)
+            last_processed_file = get_last_processed_file()  # Update last processed file number based on current directory
+            process_files()
+    else:
+        process_files()
 
