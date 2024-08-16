@@ -43,35 +43,28 @@ def read_accelerometer_data(file_path):
     except Exception as e:
         return None
 
-def extract_x_accel(data):
+def extract_data(data, start_index, SCALE):
     """
-    Extracts and scales the x-axis acceleration data from a numpy array.
+    Extracts and scales one specific stream of data from the raw array. If the sensor index is n, the start index is:
+    6n: x_accel
+    6n+1: y_accel
+    6n+2: z_accel
+    6n+3: x_gyro
+    6n+4: y_gyro
+    6n+5: z_gyro
 
     Args:
-        data (numpy.array): The raw accelerometer data array.
+        data (numpy.array): The raw data array.
+        start_index (int): The index to start extracting from
+        SCALE (int): The amount that the values are scalled by, either ACCEL_SCALE or GYRO_SCALE
 
     Returns:
-        numpy.array: The scaled x-axis acceleration values.
+        numpy.array: The extracted scaled values.
     """
 
-    x_accel = data[0::30]  # Extract every 30th value starting from the 0th
-    x_accel_scaled = (x_accel / 32768.0) * ACCEL_SCALE  # Scale the readings to the accelerometer range
-    return x_accel_scaled
-
-def extract_x_gyro(data):
-    """
-    Extracts and scales the x-axis gyro data from a numpy array.
-
-    Args:
-        data (numpy.array): The raw gyroscope data array.
-
-    Returns:
-        numpy.array: The scaled x-axis gyro values.
-    """
-
-    x_gyro = data[3::30]  # Extract every 30th value starting from the 0th
-    x_gyro_scaled = (x_gyro / 32768.0) * GYRO_SCALE  # Scale the readings to the accelerometer range
-    return x_gyro_scaled
+    extracted_data = data[start_index::30]  # Extract every 30th value starting from the start_index
+    extracted_data_scaled = (extracted_data / 32768.0) * SCALE  # Scale the readings to the accelerometer range
+    return extracted_data_scaled
 
 def compute_total_rotation(x_gyro_data):
     """
@@ -87,6 +80,25 @@ def compute_total_rotation(x_gyro_data):
     time_interval = 1 / SAMPLING_RATE
     total_rotation = np.sum(x_gyro_data) * time_interval
     return total_rotation
+
+def is_valid_jump(data):
+    """
+    Runs checks to ensure the potential identified jumps meet the criteria for a jump. This includes:
+    1. Total rotation > 180 degrees
+    2. Skate sees acceleration of at least 5 Gs at some point (this occurs at takeoff)
+
+    Args: 
+        data (numpy.array): The raw data array
+
+    Returns:
+        Bool: If jump is valid
+    """
+    total_rotation = abs(compute_total_rotation(extract_data(data, 3, GYRO_SCALE)))
+    print(f"rotation: {total_rotation}")
+    accel_data = extract_data(data, 19, ACCEL_SCALE)
+    maximum = np.max(accel_data[:len(accel_data) // 2])
+    print(f"max: {maximum}")
+    return total_rotation  > MINIMUM_ROTATION and maximum > 5
 
 def detect_jumps(x_accel_data, start_time_offset):
     """
@@ -182,8 +194,8 @@ def process_files_and_detect_jumps(index, processed_dir):
 
         if data_prev is not None and data_curr is not None:
             # Get the acceleration data
-            x_accel_prev = extract_x_accel(data_prev)
-            x_accel_curr = extract_x_accel(data_curr)
+            x_accel_prev = extract_data(data_prev, 0, ACCEL_SCALE)
+            x_accel_curr = extract_data(data_curr, 0, ACCEL_SCALE)
             start_time_offset = (index - 2) * READINGS_PER_FILE / SAMPLING_RATE
             
             # Combine the two data arrays into one and find the jumps in it
@@ -217,10 +229,12 @@ def process_files_and_detect_jumps(index, processed_dir):
             jump_data = jump_data.astype(np.int16)
             
             # Check if the jump has the minimum rotation to be considered a jump
-            if abs(compute_total_rotation(extract_x_gyro(jump_data))) > MINIMUM_ROTATION:
+            if is_valid_jump(jump_data):
                 jump_file_path = os.path.join(JUMPS_DIR, f'jump_{jump_counter}.bin')
                 jump_data.tofile(jump_file_path)
             
                 file_size = os.path.getsize(jump_file_path)
                 print(f"Jump data saved to {jump_file_path}")
+            else:
+                print("Jump not valid")
 
