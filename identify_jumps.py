@@ -24,6 +24,9 @@ STATE_GROUNDED = 0
 STATE_TAKEOFF = 1
 STATE_IN_AIR = 2
 
+# Temporary Bugfix:
+previous_end = -1
+
 def read_accelerometer_data(file_path):
     """
     Reads a binary file containing accelerometer data and returns it as a numpy array of signed 16-bit integers.
@@ -175,6 +178,10 @@ def process_files_and_detect_jumps(index, processed_dir):
         None: Detected jumps are processed and saved to disk. Messages are printed to indicate detected jumps and save status.
     """
     
+    global previous_end
+    if index == 3:
+        previous_end = -1
+    
     PROCESSED_DIR = processed_dir
     JUMPS_DIR = os.path.join(os.path.dirname(PROCESSED_DIR), 'jumps')	
 
@@ -207,6 +214,7 @@ def process_files_and_detect_jumps(index, processed_dir):
 
         # Process each new jump for saving
         for jump in all_jumps:
+
             jump_start_time, jump_end_time = jump
             print(f"Detected jump from {jump_start_time:.2f}s to {jump_end_time:.2f}s")
                 
@@ -215,7 +223,12 @@ def process_files_and_detect_jumps(index, processed_dir):
             end_index = (int((jump_end_time - index + 2) * READINGS_PER_FILE) + END_BUFFER) * 30 + 30 + (READINGS_PER_FILE * 30)
             start_index = end_index - (JUMP_LENGTH * 30)
             print(f'start_index: {start_index}. end_index: {end_index}')
-                        
+            
+            if abs(end_index + 3000 - previous_end) <= 20:
+                print("Duplicate Jump Detected")
+                continue
+            previous_end = end_index
+            
             # Determine what number jump this is
             jump_files = glob.glob(os.path.join(JUMPS_DIR, 'jump_*.bin'))
             if jump_files:

@@ -91,7 +91,7 @@ class MainApplication(QWidget):
                                if os.path.isfile(os.path.join(jumps_path, jump)) and jump.startswith("jump_"))
 
         # Check if the list of jumps has changed since last update
-        if hasattr(self, 'last_jump_list') and self.last_jump_list == current_jumps:
+        if hasattr(self, 'last_jump_list') and self.last_jump_list == current_jumps and hasattr(self, 'last_jump_path') and self.last_jump_path == jumps_path:
             return  # No change detected, no need to update the dropdown
 
         # Update the dropdown with the new list of jumps
@@ -100,6 +100,7 @@ class MainApplication(QWidget):
             self.jump_dropdown.addItem(jump, os.path.join(jumps_path, jump))
 
         # Remember the current list of jumps for future comparisons
+        self.last_jump_path = jumps_path
         self.last_jump_list = current_jumps    
 
     def toggle_jump_view(self):
