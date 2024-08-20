@@ -3,7 +3,8 @@
 ## Overview
 TODO (include images and schematics)
 ## Instructions
-TODO
+Create Python Virtual Envirnment
+Install: PyQt5, numpy, pyqtgraph, scipy, torch
 ## Website
 The skatelligence website is: `https://skatelligence.ca/`
 The repo for the website can be found at `https://github.com/ayihuang/ayihuang.github.io/`
