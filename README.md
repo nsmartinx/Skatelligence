@@ -7,7 +7,7 @@ Create virtual environment and install dependencies:
 ```
 python -m venv venv
 . venv/bin/activate
-python -m pip install PyQt5 numpy pyqtgraph scipy torch notebook
+python -m pip install PyQt5 numpy pyqtgraph scipy torch notebook scikit-learn
 ```
 ## Website
 The skatelligence website is: `https://skatelligence.ca/`
