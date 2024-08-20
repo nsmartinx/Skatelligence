@@ -10,7 +10,7 @@ SENSOR_COUNT = 5
 BASE_DIR = os.path.dirname(__file__)
 PROCESSED_DIR = os.path.join(BASE_DIR, 'data/live/processed_data')  # Directory containing processed data
 JUMPS_DIR = os.path.join(BASE_DIR, 'data/live/jumps')
-START_BUFFER = 50
+JUMP_LENGTH = 150
 END_BUFFER = 30
 SAMPLING_RATE = 100.0  # Hz of IMU sampling
 MIN_JUMP_DURATION = 0.2  # Minimum duration of a jump in seconds
@@ -212,8 +212,8 @@ def process_files_and_detect_jumps(index, processed_dir):
                 
             # Calculate the start and end index in the files, this is the index relative to the concatenation of
             # data_prev and data_curr.
-            start_index = (int((jump_start_time - index + 2) * READINGS_PER_FILE) - START_BUFFER) * 30 + (READINGS_PER_FILE * 30)
             end_index = (int((jump_end_time - index + 2) * READINGS_PER_FILE) + END_BUFFER) * 30 + 30 + (READINGS_PER_FILE * 30)
+            start_index = end_index - (JUMP_LENGTH * 30)
             print(f'start_index: {start_index}. end_index: {end_index}')
                         
             # Determine what number jump this is
