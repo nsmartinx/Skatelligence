@@ -4,6 +4,7 @@
 TODO (include images and schematics)
 ## Instructions
 Create Python Virtual Envirnment
+
 Install: PyQt5, numpy, pyqtgraph, scipy, torch
 ## Website
 The skatelligence website is: `https://skatelligence.ca/`
