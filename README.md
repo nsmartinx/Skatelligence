@@ -19,7 +19,7 @@ python -m pip install PyQt5 numpy pyqtgraph scipy torch notebook scikit-learn
 7. From a new terminal, in the virtual environment, launch the application: `python main.py`
 8. Connect the ESP32 to power, after a brief delay, you should see the live readings from the IMUs
 ## Website
-The skatelligence website is: `https://skatelligence.ca/`
-The repo for the website can be found at `https://github.com/ayihuang/ayihuang.github.io/`
+The skatelligence website can be found [here](https://skatelligence.ca/)
+The repo for the website can be found [here](https://github.com/ayihuang/ayihuang.github.io/)
 ## Authors
 Nathan Martin and Angela Huang
