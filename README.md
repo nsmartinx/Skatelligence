@@ -1,7 +1,7 @@
 # Skatelligence
 *An AI powered high-performance training tool for figure skaters*
 ## Overview
-Please the [Skatelligence Website](skatelligence.ca) for the most up to date information, as well as a technical breakdown of how everything works.
+Please the [Skatelligence Website](https://skatelligence.ca/) for the most up to date information, as well as a technical breakdown of how everything works.
 
 Note: As it is not exactly clear what Skatelligence will turn into in the future, some things have been left out of this public repository. At this point it is mostly just some extra Data, and some work on the AI Models.
 ## Instructions
