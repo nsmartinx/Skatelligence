@@ -1,15 +1,42 @@
 import asyncio
 from bleak import BleakClient, BleakScanner
+from collections import deque
 
 # Replace with the UUID of the characteristic you want to read
 CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
+# Deque to store the timestamps of received data packets
+timestamps = deque()
+
 async def handle_data(sender, data):
     """
     Callback to handle incoming data from the ESP32.
-    Prints the data to the console.
+    Logs the number of bytes received and their size.
     """
-    print(f"Data from {sender}: {data.decode('utf-8')}")
+    global timestamps
+    # Log the timestamp of received data
+    timestamps.append(asyncio.get_event_loop().time())
+    
+    # Print data size
+    # print(f"Received {len(data)} bytes: {data.hex()}")
+
+async def log_data_rate():
+    """
+    Logs the data rate (packets per second and bytes per second) every second.
+    """
+    global timestamps
+    while True:
+        await asyncio.sleep(1)
+        current_time = asyncio.get_event_loop().time()
+
+        # Remove timestamps older than 1 second
+        while timestamps and timestamps[0] < current_time - 1:
+            timestamps.popleft()
+
+        # Calculate packets per second and bytes per second
+        packets_per_second = len(timestamps)
+        bytes_per_second = packets_per_second * 60  # Each packet is 60 bytes
+        print(f"Data rate: {packets_per_second} packets/sec, {bytes_per_second} bytes/sec")
 
 async def connect_to_esp32():
     """
@@ -54,6 +81,9 @@ async def connect_to_esp32():
         # Subscribe to notifications
         await client.start_notify(CHARACTERISTIC_UUID, handle_data)
         print("Subscribed to notifications. Listening for data...")
+
+        # Start logging the data rate
+        asyncio.create_task(log_data_rate())
 
         try:
             while True:

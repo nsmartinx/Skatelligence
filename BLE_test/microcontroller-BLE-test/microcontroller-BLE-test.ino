@@ -7,8 +7,10 @@
 
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
-unsigned long lastMillis = 0;
-int counter = 1; // Start the counter from 1
+unsigned long lastMicros = 0;
+
+// Fixed 60-byte payload
+uint8_t payload[60] = {0};
 
 // Callback to handle client connection and disconnection
 class MyServerCallbacks : public BLEServerCallbacks {
@@ -48,8 +50,9 @@ void setup() {
                       BLECharacteristic::PROPERTY_NOTIFY
                     );
 
-  // Set initial value for the characteristic
-  pCharacteristic->setValue("0"); // Initialize with 0
+  // Set an initial value for the characteristic
+  memset(payload, 0, sizeof(payload)); // Initialize payload with zeros
+  pCharacteristic->setValue(payload, sizeof(payload));
 
   // Start the service
   pService->start();
@@ -63,15 +66,20 @@ void setup() {
 void loop() {
   // Only send data if a device is connected
   if (deviceConnected) {
-    unsigned long currentMillis = millis();
-    if (currentMillis - lastMillis > 1000) { // Send data every 1 second
-      lastMillis = currentMillis;
+    unsigned long currentMicros = micros();
+    if (currentMicros - lastMicros >= 10000) { // 10 ms interval for 100 Hz
+      lastMicros = currentMicros;
 
-      // Increment the counter and send it as a notification
-      String dataToSend = String(counter++);
-      pCharacteristic->setValue(dataToSend.c_str());
-      pCharacteristic->notify(); // Notify the client
-      Serial.println("Sent via BLE: " + dataToSend);
+      // Update payload (example: fill with incrementing counter values)
+      static uint8_t counter = 0;
+      for (int i = 0; i < sizeof(payload); i++) {
+        payload[i] = counter++;
+      }
+
+      // Send the payload as a notification
+      pCharacteristic->setValue(payload, sizeof(payload));
+      pCharacteristic->notify();
+      Serial.println("Sent 60-byte payload via BLE");
     }
   } else {
     // If no device is connected, print a debug message every 5 seconds
