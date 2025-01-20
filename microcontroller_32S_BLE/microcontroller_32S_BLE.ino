@@ -209,7 +209,6 @@ void uploadDataTask(void * parameter) {
   }
 }
 
-// TCA9548A SELECT
 void tcaSelect(uint8_t i) {
   if (i > 7) return;
   Wire.beginTransmission(TCA_ADDR);
@@ -237,7 +236,6 @@ void setupMPU6050() {
   Wire.endTransmission();
 }
 
-// READ MPU6050
 void readMPU6050(int16_t* Ax, int16_t* Ay, int16_t* Az, 
                  int16_t* Gx, int16_t* Gy, int16_t* Gz) {
   Wire.beginTransmission(0x68);
@@ -258,7 +256,6 @@ void readMPU6050(int16_t* Ax, int16_t* Ay, int16_t* Az,
   *Gz = Wire.read() << 8 | Wire.read();
 }
 
-// OPTIONAL: WIPE SPIFFS
 void wipeSPIFFS() {
   Serial.println("Wiping SPIFFS...");
   File root = SPIFFS.open("/");
